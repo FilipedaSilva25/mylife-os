@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Vida - Profissional & Pessoal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-personal"> <nav class="navbar">
+        <div class="logo">MyLife OS</div>
+        <div class="profile-switcher">
+            <button id="btn-toggle" onclick="toggleProfile()">Alternar para Profissional</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header>
+            <h1 id="main-title">Meu Diário Pessoal</h1>
+            <p id="description">Espaço para reflexões e notas íntimas.</p>
+        </header>
+
+        <section class="module editor-section">
+            <div class="toolbar">
+                <span id="save-status">Salvo localmente</span>
+            </div>
+            <textarea id="main-editor" placeholder="Comece a escrever aqui..."></textarea>
+        </section>
+
+        <section class="module drawing-section">
+    <div class="toolbar">
+        <h3>Quadro de Desenho</h3>
+        <button onclick="clearCanvas()">Limpar Quadro</button>
+    </div>
+    <canvas id="main-canvas"></canvas>
+</section>
+
+        </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
