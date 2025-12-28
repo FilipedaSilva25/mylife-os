@@ -1,116 +1,186 @@
-:root {
-    --primary: #007AFF;
-    --success: #34C759;
-    --danger: #FF453A;
-    --glass: rgba(255, 255, 255, 0.08);
-    --border: rgba(255, 255, 255, 0.1);
-    --bg-dark: radial-gradient(circle at top right, #0f172a, #020617);
+let currentUser = null;
+let currentMode = 'pessoal';
+let authMode = 'login';
+let pomoInterval = null;
+
+// CONTROLE DE TELAS (LOGIN vs CADASTRO)
+function toggleAuth(mode) {
+    authMode = mode;
+    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+    
+    // Mostra/Esconde campos de Nome e Email
+    const registerFields = document.getElementById('register-only-fields');
+    registerFields.style.display = mode === 'register' ? 'block' : 'none';
+    
+    // Altera o texto do botão principal
+    document.getElementById('auth-main-btn').innerText = mode === 'login' ? 'Acessar AXIS' : 'Finalizar Cadastro';
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-
-body { 
-    color: white; 
-    min-height: 100vh; 
-    background: var(--bg-dark); 
-    overflow-x: hidden;
+// OLHO DA SENHA (JÁ FIXADO)
+function togglePassword() {
+    const p = document.getElementById('password');
+    const eye = document.querySelector('.eye-icon');
+    if (p.type === 'password') {
+        p.type = 'text';
+        eye.innerText = '🙈';
+    } else {
+        p.type = 'password';
+        eye.innerText = '👁️';
+    }
 }
 
-/* TELA DE LOGIN */
-#auth-screen {
-    position: fixed; width: 100%; height: 100%; display: flex; 
-    justify-content: center; align-items: center; z-index: 1000;
+// LOGICA DE AUTENTICAÇÃO E CADASTRO
+function handleAuth() {
+    const user = document.getElementById('username').value.trim().toUpperCase();
+    const pass = document.getElementById('password').value;
+
+    if (authMode === 'register') {
+        const fullName = document.getElementById('reg-fullname').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+
+        if (!fullName || !email || !user || !pass) {
+            alert("Por favor, preencha todos os 4 campos para o cadastro AXIS.");
+            return;
+        }
+
+        const userData = {
+            name: fullName,
+            email: email,
+            pass: pass,
+            tasks: [],
+            fin: [],
+            habits: [
+                {n: "Beber Água", d: false},
+                {n: "Check Sistema", d: false},
+                {n: "Leitura", d: false}
+            ],
+            diary: { pessoal: "", profissional: "" }
+        };
+
+        localStorage.setItem('db_' + user, JSON.stringify(userData));
+        alert(`Conta AXIS criada com sucesso! Bem-vindo, ${fullName}.`);
+        toggleAuth('login');
+        
+    } else {
+        // Lógica de Login
+        const storedData = JSON.parse(localStorage.getItem('db_' + user));
+        
+        if (storedData && storedData.pass === pass) {
+            currentUser = user;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            updateUI();
+        } else {
+            alert("Credenciais INVÁLIDAS.");
+        }
+    }
 }
 
-.auth-card {
-    width: 90%; max-width: 400px; padding: 40px; border-radius: 28px;
-    background: rgba(10, 15, 25, 0.9); backdrop-filter: blur(20px);
-    border: 1px solid var(--border); text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+// ATUALIZAÇÃO DA INTERFACE (USA O NOME SALVO)
+function updateUI() {
+    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
+    // Aqui usamos o NOME REAL em vez do usuário
+    document.getElementById('welcome-msg').innerText = db.name || currentUser;
+    
+    renderHabits(db);
+    renderTasks(db);
+    renderFinance(db);
+    document.getElementById('diary-input').value = db.diary[currentMode] || "";
 }
 
-.main-auth-logo {
-    width: 100%; max-width: 300px; height: auto; margin-bottom: 30px;
+// --- FUNÇÕES DO DASHBOARD (HÁBITOS, TAREFAS, FINANÇAS) ---
+
+function renderHabits(db) {
+    const list = document.getElementById('habit-list');
+    list.innerHTML = '';
+    let done = 0;
+    db.habits.forEach((h, i) => {
+        if (h.d) done++;
+        list.innerHTML += `<div class="habit-item ${h.d ? 'done' : ''}" onclick="toggleHabit(${i})">${h.n}</div>`;
+    });
+    document.getElementById('habit-progress').style.width = (done / db.habits.length * 100) + '%';
 }
 
-/* HEADER */
-.top-nav {
-    position: fixed; top: 0; width: 100%; height: 75px;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0 30px; background: rgba(5, 7, 10, 0.8);
-    backdrop-filter: blur(15px); border-bottom: 1px solid var(--border); z-index: 100;
+function toggleHabit(index) {
+    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
+    db.habits[index].d = !db.habits[index].d;
+    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
+    updateUI();
 }
 
-.nav-icon { height: 40px; width: auto; margin-right: 15px; }
-
-/* GRID DO DASHBOARD */
-.dashboard-grid {
-    padding: 110px 25px 40px; display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px; max-width: 1200px; margin: 0 auto;
+function addTodo() {
+    const val = document.getElementById('todo-input').value;
+    if (!val) return;
+    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
+    db.tasks.push({ text: val, mode: currentMode });
+    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
+    document.getElementById('todo-input').value = '';
+    updateUI();
 }
 
-.card-glass { background: var(--glass); border: 1px solid var(--border); border-radius: 22px; padding: 25px; }
-.full-span { grid-column: 1 / -1; }
-
-/* INPUTS E BOTÕES */
-.input-group { margin-bottom: 15px; }
-.input-group input, .input-row input, textarea {
-    width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
-    background: rgba(255,255,255,0.05); color: white; outline: none;
+function renderTasks(db) {
+    const list = document.getElementById('todo-list');
+    list.innerHTML = '';
+    db.tasks.filter(t => t.mode === currentMode).forEach(t => {
+        list.innerHTML += `<li>${t.text}</li>`;
+    });
 }
 
-.btn-primary {
-    width: 100%; padding: 14px; background: var(--primary); border: none;
-    border-radius: 12px; color: white; font-weight: 600; cursor: pointer;
+function addFinance() {
+    const desc = document.getElementById('fin-desc').value;
+    const val = parseFloat(document.getElementById('fin-val').value);
+    if (!desc || isNaN(val)) return;
+    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
+    db.fin.push({ desc, val, mode: currentMode });
+    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
+    document.getElementById('fin-desc').value = '';
+    document.getElementById('fin-val').value = '';
+    updateUI();
 }
 
-.btn-add { padding: 12px 20px; background: var(--success); border: none; color: white; border-radius: 10px; cursor: pointer; }
-
-/* TABS LOGIN */
-.auth-tabs { display: flex; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; margin-bottom: 25px; }
-.auth-tabs button { flex: 1; padding: 10px; border: none; background: transparent; color: #888; cursor: pointer; }
-.auth-tabs button.active { background: #1e293b; color: white; border-radius: 10px; }
-
-/* ELEMENTOS DIVERSOS */
-.progress-bg { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 15px; }
-.progress-fill { height: 100%; background: var(--success); width: 0%; border-radius: 10px; transition: 0.5s; }
-.habit-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 20px; }
-.habit-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; }
-.habit-item.done { background: rgba(52, 199, 89, 0.2); border: 1px solid var(--success); }
-.fade-in { animation: fadeIn 0.6s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
-
-/* Container que agrupa o input e o ícone */
-.password-container {
-    position: relative; /* Base para o posicionamento do olho */
-    display: flex;
-    align-items: center;
-    width: 100%;
+function renderFinance(db) {
+    const list = document.getElementById('fin-list');
+    list.innerHTML = '';
+    let total = 0;
+    db.fin.filter(f => f.mode === currentMode).forEach(f => {
+        total += f.val;
+        list.innerHTML += `<li class="finance-item"><span>${f.desc}</span> <span>R$ ${f.val.toFixed(2)}</span></li>`;
+    });
+    document.getElementById('fin-total').innerText = `R$ ${total.toFixed(2)}`;
 }
 
-/* Garante que o texto da senha não fique por baixo do ícone */
-.password-container input {
-    width: 100%;
-    padding-right: 45px !important; /* Espaço na direita para o olho */
+function saveDiary() {
+    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
+    db.diary[currentMode] = document.getElementById('diary-input').value;
+    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
+    alert("Notas AXIS salvas!");
 }
 
-/* Posicionamento exato do olho */
-.eye-icon {
-    position: absolute;
-    right: 15px; /* Distância da borda direita */
-    top: 50%;
-    transform: translateY(-50%); /* Alinhamento vertical perfeito */
-    cursor: pointer;
-    font-size: 1.2rem;
-    opacity: 0.6;
-    transition: opacity 0.3s;
-    user-select: none; /* Evita selecionar o emoji como texto */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+function togglePomodoro() {
+    if (pomoInterval) { 
+        clearInterval(pomoInterval); 
+        pomoInterval = null; 
+        document.getElementById('btn-pomo').innerText = '▶';
+    } else {
+        let t = 1500;
+        document.getElementById('btn-pomo').innerText = '⏸';
+        pomoInterval = setInterval(() => {
+            t--;
+            let m = Math.floor(t/60), s = t%60;
+            document.getElementById('pomo-timer').innerText = `${m}:${s<10?'0':''}${s}`;
+            if (t <= 0) { clearInterval(pomoInterval); alert("Tempo Esgotado!"); }
+        }, 1000);
+    }
 }
 
-.eye-icon:hover {
+function switchMode() {
+    currentMode = currentMode === 'pessoal' ? 'profissional' : 'pessoal';
+    document.getElementById('mode-toggle').innerText = `Perfil: ${currentMode}`;
+    updateUI();
+}
+
+function logout() { location.reload(); }
     opacity: 1;
 }
+
