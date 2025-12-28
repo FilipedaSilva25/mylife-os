@@ -114,3 +114,23 @@ body {
 .eye-icon:hover {
     opacity: 1;
 }
+/* --- AJUSTES DE RESPONSIVIDADE (CELULAR) --- */
+@media (max-width: 480px) {
+    .auth-card {
+        width: 95%; /* Ocupa quase toda a largura em telas pequenas */
+        padding: 20px;
+    }
+
+    .main-auth-logo {
+        max-width: 100%; /* Impede a logo de sair para fora do card */
+        height: auto;
+    }
+
+    .auth-tabs button {
+        font-size: 0.9rem; /* Diminui um pouco o texto para caber lado a lado */
+    }
+
+    .top-nav {
+        padding: 0 15px; /* Reduz recuo no topo do sistema */
+    }
+}
