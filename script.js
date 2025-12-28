@@ -3,68 +3,85 @@ let currentMode = 'pessoal';
 let authMode = 'login';
 let pomoInterval = null;
 
-// --- SISTEMA DE LOGIN ---
+// CONTROLE DE TELAS (LOGIN vs CADASTRO)
 function toggleAuth(mode) {
     authMode = mode;
     document.getElementById('tab-login').classList.toggle('active', mode === 'login');
     document.getElementById('tab-register').classList.toggle('active', mode === 'register');
-    document.getElementById('auth-main-btn').innerText = mode === 'login' ? 'Acessar' : 'Criar Conta';
+    
+    // Mostra/Esconde campos de Nome e Email
+    const registerFields = document.getElementById('register-only-fields');
+    registerFields.style.display = mode === 'register' ? 'block' : 'none';
+    
+    // Altera o texto do botão principal
+    document.getElementById('auth-main-btn').innerText = mode === 'login' ? 'Acessar AXIS' : 'Finalizar Cadastro';
 }
 
+// OLHO DA SENHA (JÁ FIXADO)
 function togglePassword() {
     const p = document.getElementById('password');
-    p.type = p.type === 'password' ? 'text' : 'password';
+    const eye = document.querySelector('.eye-icon');
+    if (p.type === 'password') {
+        p.type = 'text';
+        eye.innerText = '🙈';
+    } else {
+        p.type = 'password';
+        eye.innerText = '👁️';
+    }
 }
 
+// LOGICA DE AUTENTICAÇÃO E CADASTRO
 function handleAuth() {
     const user = document.getElementById('username').value.trim().toUpperCase();
     const pass = document.getElementById('password').value;
 
-    if (!user || !pass) return alert("Preencha todos os campos.");
-
     if (authMode === 'register') {
-        const data = { 
-            pass, 
-            tasks: [], 
-            fin: [], 
-            habits: [{n:"Beber Água", d:false}, {n:"Ler 10min", d:false}, {n:"Treino", d:false}], 
-            diary: {pessoal:"", profissional:""} 
+        const fullName = document.getElementById('reg-fullname').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+
+        if (!fullName || !email || !user || !pass) {
+            alert("Por favor, preencha todos os 4 campos para o cadastro AXIS.");
+            return;
+        }
+
+        const userData = {
+            name: fullName,
+            email: email,
+            pass: pass,
+            tasks: [],
+            fin: [],
+            habits: [
+                {n: "Beber Água", d: false},
+                {n: "Check Sistema", d: false},
+                {n: "Leitura", d: false}
+            ],
+            diary: { pessoal: "", profissional: "" }
         };
-        localStorage.setItem('db_' + user, JSON.stringify(data));
-        alert("Conta criada! Faça login.");
+
+        localStorage.setItem('db_' + user, JSON.stringify(userData));
+        alert(`Conta AXIS criada com sucesso! Bem-vindo, ${fullName}.`);
         toggleAuth('login');
+        
     } else {
-        const db = JSON.parse(localStorage.getItem('db_' + user));
-        if (db && db.pass === pass) {
+        // Lógica de Login
+        const storedData = JSON.parse(localStorage.getItem('db_' + user));
+        
+        if (storedData && storedData.pass === pass) {
             currentUser = user;
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             updateUI();
         } else {
-            alert("Dados incorretos.");
+            alert("Credenciais INVÁLIDAS.");
         }
     }
 }
 
-// --- NÚCLEO DO DASHBOARD ---
-function switchMode() {
-    const dash = document.getElementById('dashboard-main');
-    dash.classList.add('changing');
-    
-    setTimeout(() => {
-        currentMode = currentMode === 'pessoal' ? 'profissional' : 'pessoal';
-        document.body.className = currentMode === 'pessoal' ? 'mode-pessoal' : 'mode-profissional';
-        document.getElementById('mode-toggle').innerText = `Perfil: ${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}`;
-        document.getElementById('task-mode-label').innerText = currentMode.toUpperCase();
-        updateUI();
-        dash.classList.remove('changing');
-    }, 300);
-}
-
+// ATUALIZAÇÃO DA INTERFACE (USA O NOME SALVO)
 function updateUI() {
     const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    document.getElementById('welcome-msg').innerText = currentUser;
-    document.getElementById('user-initials').innerText = currentUser.substring(0,2);
+    // Aqui usamos o NOME REAL em vez do usuário
+    document.getElementById('welcome-msg').innerText = db.name || currentUser;
     
     renderHabits(db);
     renderTasks(db);
@@ -72,33 +89,31 @@ function updateUI() {
     document.getElementById('diary-input').value = db.diary[currentMode] || "";
 }
 
-// --- FUNÇÕES DE DADOS ---
+// --- FUNÇÕES DO DASHBOARD (HÁBITOS, TAREFAS, FINANÇAS) ---
 
-// 1. Hábitos
 function renderHabits(db) {
     const list = document.getElementById('habit-list');
     list.innerHTML = '';
     let done = 0;
     db.habits.forEach((h, i) => {
         if (h.d) done++;
-        list.innerHTML += `<div class="habit-item ${h.d?'done':''}" onclick="toggleHabit(${i})">${h.n} ${h.d?'✅':''}</div>`;
+        list.innerHTML += `<div class="habit-item ${h.d ? 'done' : ''}" onclick="toggleHabit(${i})">${h.n}</div>`;
     });
-    document.getElementById('habit-progress').style.width = (done/db.habits.length*100) + '%';
+    document.getElementById('habit-progress').style.width = (done / db.habits.length * 100) + '%';
 }
 
-function toggleHabit(i) {
+function toggleHabit(index) {
     const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    db.habits[i].d = !db.habits[i].d;
+    db.habits[index].d = !db.habits[index].d;
     localStorage.setItem('db_' + currentUser, JSON.stringify(db));
     updateUI();
 }
 
-// 2. Tarefas
 function addTodo() {
     const val = document.getElementById('todo-input').value;
-    if(!val) return;
+    if (!val) return;
     const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    db.tasks.push({text: val, mode: currentMode});
+    db.tasks.push({ text: val, mode: currentMode });
     localStorage.setItem('db_' + currentUser, JSON.stringify(db));
     document.getElementById('todo-input').value = '';
     updateUI();
@@ -112,18 +127,13 @@ function renderTasks(db) {
     });
 }
 
-// 3. Finanças Inteligentes (Verde e Vermelho)
 function addFinance() {
     const desc = document.getElementById('fin-desc').value;
-    const valInput = document.getElementById('fin-val').value;
-    if(!desc || !valInput) return alert("Digite descrição e valor!");
-    
-    const val = parseFloat(valInput);
+    const val = parseFloat(document.getElementById('fin-val').value);
+    if (!desc || isNaN(val)) return;
     const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    
-    db.fin.push({ desc, val, mode: currentMode, date: new Date().toLocaleDateString('pt-BR').slice(0,5) });
+    db.fin.push({ desc, val, mode: currentMode });
     localStorage.setItem('db_' + currentUser, JSON.stringify(db));
-    
     document.getElementById('fin-desc').value = '';
     document.getElementById('fin-val').value = '';
     updateUI();
@@ -133,45 +143,41 @@ function renderFinance(db) {
     const list = document.getElementById('fin-list');
     list.innerHTML = '';
     let total = 0;
-
-    const items = db.fin.filter(f => f.mode === currentMode);
-
-    items.forEach(f => {
+    db.fin.filter(f => f.mode === currentMode).forEach(f => {
         total += f.val;
-        const isExpense = f.val < 0;
-        list.innerHTML += `
-            <li class="finance-item ${isExpense ? 'expense' : 'income'}">
-                <div>${f.desc} <small style="opacity:0.5; margin-left:5px">(${f.date})</small></div>
-                <span>${isExpense ? '' : '+'}R$ ${f.val.toFixed(2)}</span>
-            </li>
-        `;
+        list.innerHTML += `<li class="finance-item"><span>${f.desc}</span> <span>R$ ${f.val.toFixed(2)}</span></li>`;
     });
-
-    const totalEl = document.getElementById('fin-total');
-    totalEl.innerText = `R$ ${total.toFixed(2)}`;
-    totalEl.style.color = total >= 0 ? '#34C759' : '#FF453A';
+    document.getElementById('fin-total').innerText = `R$ ${total.toFixed(2)}`;
 }
 
-// 4. Diário
 function saveDiary() {
     const db = JSON.parse(localStorage.getItem('db_' + currentUser));
     db.diary[currentMode] = document.getElementById('diary-input').value;
     localStorage.setItem('db_' + currentUser, JSON.stringify(db));
-    alert("Salvo!");
+    alert("Notas AXIS salvas!");
 }
 
-// 5. Pomodoro
 function togglePomodoro() {
-    if (pomoInterval) { clearInterval(pomoInterval); pomoInterval = null; }
-    else {
+    if (pomoInterval) { 
+        clearInterval(pomoInterval); 
+        pomoInterval = null; 
+        document.getElementById('btn-pomo').innerText = '▶';
+    } else {
         let t = 1500;
+        document.getElementById('btn-pomo').innerText = '⏸';
         pomoInterval = setInterval(() => {
             t--;
             let m = Math.floor(t/60), s = t%60;
             document.getElementById('pomo-timer').innerText = `${m}:${s<10?'0':''}${s}`;
-            if (t <= 0) clearInterval(pomoInterval);
+            if (t <= 0) { clearInterval(pomoInterval); alert("Tempo Esgotado!"); }
         }, 1000);
     }
+}
+
+function switchMode() {
+    currentMode = currentMode === 'pessoal' ? 'profissional' : 'pessoal';
+    document.getElementById('mode-toggle').innerText = `Perfil: ${currentMode}`;
+    updateUI();
 }
 
 function logout() { location.reload(); }
