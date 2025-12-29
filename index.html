@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="IMAGENS/fivecon_1.1.png.png">
+    <link rel="icon" type="image/png" href="IMAGENS/Novo_Fivecon_1.2.png">
     <title>AXIS</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
-<body class="mode-pessoal">
+<body>
 
     <div id="auth-screen">
-        <div class="auth-card fade-in">
+        <div class="auth-card">
             <div class="logo-area">
-                <img src="IMAGENS/logo_sem_fundo_1.1.png.png" alt="AXIS System" class="main-auth-logo">
+                <img src="IMAGENS/Nova_Logo_Sem_Fundo_1.2.png" alt="AXIS" class="main-auth-logo">
             </div>
 
             <div class="auth-tabs">
@@ -21,90 +21,138 @@
                 <button onclick="toggleAuth('register')" id="tab-register">Criar Conta</button>
             </div>
             
-            <div id="register-only-fields" style="display: none;">
+            <div id="register-fields" style="display: none;">
                 <div class="input-group">
-                    <input type="text" id="reg-fullname" placeholder="Nome Completo" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <input type="email" id="reg-email" placeholder="E-mail" autocomplete="off">
+                    <input type="text" id="reg-fullname" placeholder="Nome Completo">
                 </div>
             </div>
 
             <div class="input-group">
-                <input type="text" id="username" placeholder="Usuário" autocomplete="off">
-            </div>
-            
-            <div class="input-group password-container">
-                <input type="password" id="password" placeholder="Senha">
-                <span class="eye-icon" onclick="togglePassword()">👁️</span>
+                <input type="text" id="username" placeholder="Usuário">
             </div>
 
-            <button onclick="handleAuth()" id="auth-main-btn" class="btn-primary">Acessar AXIS</button>
+            <div class="input-group password-container">
+                <input type="password" id="password" placeholder="Senha">
+                <button type="button" class="eye-toggle" onclick="togglePassword()">
+                    <span id="eye-icon">👁️</span>
+                </button>
+            </div>
+
+            <button onclick="handleAuth()" id="auth-main-btn" class="btn-primary-auth">Acessar AXIS</button>
         </div>
     </div>
 
     <div id="main-content" style="display: none;">
-        <header class="top-nav glass-blur">
-            <div class="user-info">
-                <img src="IMAGENS/fivecon_1.1.png.png" alt="AXIS" class="nav-icon">
-                <div>
-                    <small>Bem-vindo ao AXIS,</small>
-                    <h2 id="welcome-msg">Usuário</h2>
+        
+        <header class="apple-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <button class="menu-trigger-ios" onclick="toggleSidebar()">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </button>
+                    <img src="IMAGENS/Novo_Fivecon_1.2.png" alt="AXIS" class="brand-logo-ios">
                 </div>
-            </div>
 
-            <div class="pomodoro-nav glass-effect">
-                <span id="pomo-timer">25:00</span>
-                <button onclick="togglePomodoro()" id="btn-pomo">▶</button>
-            </div>
+                <div class="nav-welcome-text">
+                    BEM-VINDO A AXIS, <span id="user-display-name">FILIPE DA SILVA</span>
+                </div>
 
-            <div class="nav-actions">
-                <button onclick="switchMode()" id="mode-toggle" class="btn-glass-small">Perfil: Pessoal</button>
-                <button onclick="logout()" class="btn-logout">Sair</button>
+                <div class="nav-status-right">
+                    <div class="status-dot"></div>
+                    <span>SISTEMA ONLINE</span>
+                </div>
             </div>
         </header>
-        
-        <main class="dashboard-grid fade-in" id="dashboard-main">
-            <section class="card-glass full-span">
-                <div class="card-header">
-                    <h3>🏆 Hábitos Diários</h3>
-                    <div class="progress-bg"><div class="progress-fill" id="habit-progress"></div></div>
+
+        <aside id="side-menu" class="glass-sidebar">
+            <div class="sidebar-header">
+                <h3></h3>
+            </div>
+
+            <nav class="side-nav-links">
+                <button onclick="navigate('page-home')" class="side-item active">Início</button>
+                <button onclick="navigate('page-inventario')" class="side-item">Inventário</button>
+                <button onclick="navigate('page-rondas')" class="side-item">Rondas</button>
+                <button onclick="navigate('page-Manutenções Preventivas')" class="side-item">Manutenções Preventivas</button>
+                <button onclick="navigate('page-suporte')" class="side-item">Suporte</button>
+                <hr class="nav-divider">
+                <button onclick="logout()" class="side-item logout">Sair do AXIS</button>
+            </nav>
+        </aside>
+        <div id="menu-overlay" class="menu-overlay" onclick="toggleSidebar()"></div>
+
+        <main class="content-wrapper">
+            
+            <section id="page-home" class="main-section active">
+                <div class="dashboard-header">
+                    <div class="welcome-text">
+                        <h1>Módulos Técnicos</h1>
+                        <p>Gestão centralizada de ativos e vistorias.</p>
+                    </div>
                 </div>
-                <div class="habit-list" id="habit-list"></div>
+
+                <div class="quick-search-container">
+                    <input type="text" id="global-search" placeholder="Buscar TAG, IP ou Equipamento..." onkeyup="handleGlobalSearch()">
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="mod-card" onclick="navigate('page-inventario')">
+                        <div class="mod-icon">📦</div>
+                        <div class="mod-content">
+                            <h3>Inventário</h3>
+                            <p>Controle de impressoras ZT411 e hardware.</p>
+                            <span class="mod-link">Acessar Frota →</span>
+                        </div>
+                    </div>
+
+                    <div class="mod-card" onclick="navigate('page-rondas')">
+                        <div class="mod-icon">🛡️</div>
+                        <div class="mod-content">
+                            <h3>Rondas</h3>
+                            <p>Checklists e vistorias preventivas.</p>
+                            <span class="mod-link">Ver Relatórios →</span>
+                        </div>
+                    </div>
+
+                    <div class="mod-card highlight">
+                        <div class="equipment-view">
+                            <div class="equipment-info">
+                                <span class="badge-new">DESTAQUE</span>
+                                <h3>Zebra ZT411</h3>
+                                <p>Status: <span class="status-ok" style="color: #2ecc71; font-weight: bold;">Operacional</span></p>
+                                <button class="btn-mini" onclick="navigate('page-inventario')">Ver Tudo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <section class="card-glass">
-                <div class="card-header">
-                    <h3>✅ Tarefas</h3>
-                    <span class="badge" id="task-mode-label">ATIVO</span>
+            <section id="page-inventario" class="main-section">
+                <div class="section-header">
+                    <h2>Gestão de Inventário</h2>
                 </div>
-                <div class="input-row">
-                    <input type="text" id="todo-input" placeholder="Nova tarefa...">
-                    <button onclick="addTodo()" class="btn-add">+</button>
+                <div class="glass-table-container">
+                    <table class="axis-table">
+                        <thead>
+                            <tr>
+                                <th>Tag</th>
+                                <th>Modelo</th>
+                                <th>IP</th>
+                                <th>Status</th>
+                                <th>Setor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zt411-data">
+                            </tbody>
+                    </table>
                 </div>
-                <ul id="todo-list" class="styled-list"></ul>
             </section>
 
-            <section class="card-glass">
-                <div class="card-header"><h3>💰 Fluxo de Caixa</h3></div>
-                <div class="input-row">
-                    <input type="text" id="fin-desc" placeholder="Descrição">
-                    <input type="number" id="fin-val" placeholder="Valor">
-                    <button onclick="addFinance()" class="btn-add">OK</button>
-                </div>
-                <ul id="fin-list" class="finance-list"></ul>
-                <div class="card-footer">Total: <span id="fin-total">R$ 0,00</span></div>
-            </section>
-
-            <section class="card-glass full-span">
-                <h3>📝 Notas do Sistema</h3>
-                <textarea id="diary-input" placeholder="Anotações rápidas..." rows="4"></textarea>
-                <button onclick="saveDiary()" class="btn-save">Salvar Notas</button>
-            </section>
         </main>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
-
