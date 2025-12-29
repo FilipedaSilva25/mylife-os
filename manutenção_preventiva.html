@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AXIS | Vistoria Técnica Completa</title>
+    <link rel="stylesheet" href="manutenção_preventiva.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="glass-container">
+        <header class="form-header">
+            <div class="title-group">
+                <h1>Vistoria Técnica</h1>
+                <p>Checklist de Verificação - Problemas</p>
+            </div>
+            <button class="btn-voltar" onclick="location.href='index.html'">← Sair</button>
+        </header>
+
+        <form id="preventiva-form">
+            <div class="form-section row">
+                <div class="input-group">
+                    <label>Setor</label>
+                    <input type="text" placeholder="Ex: PACKING - BANCADA 77" required>
+                </div>
+                <div class="input-group">
+                    <label>Unidade</label>
+                    <input type="text" placeholder="Ex: BRSC02 - CAD FLORIPA" required>
+                </div>
+            </div>
+
+            <div class="form-section row-3">
+                <div class="input-group">
+                    <label>Serial Number</label>
+                    <input type="text" placeholder="Ex: 99J243203380">
+                </div>
+                <div class="input-group">
+                    <label>Modelo</label>
+                    <input type="text" placeholder="Ex: ZT411">
+                </div>
+                <div class="input-group">
+                    <label>IP</label>
+                    <input type="text" placeholder="Ex: 10.201.131.0">
+                </div>
+            </div>
+
+            <div class="form-section row-3">
+                <div class="input-group">
+                    <label>MAC BLUETOOTH</label>
+                    <input type="text" placeholder="Ex: 90:75:DE:05:D8:A7">
+                </div>
+                <div class="input-group">
+                    <label>MAC DE REDE</label>
+                    <input type="text" placeholder="Ex: 90:75:DE:05:D8:A6">
+                </div>
+                <div class="input-group">
+                    <label>SELB</label>
+                    <input type="text" placeholder="Ex: EQ93">
+                </div>
+            </div>
+
+            <div class="checklist-grid">
+                <div class="card-checklist">
+                    <h3>Estado Geral</h3>
+                    <label><input type="checkbox"> Quebrado fisicamente (trincas, carcaça danificada)</label>
+                    <label><input type="checkbox"> Sujeira excessiva (poeira, gordura, resíduos)</label>
+                    <label><input type="checkbox"> Componentes soltos</label>
+                    <label><input type="checkbox"> Peel Off Quebrado</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Alimentação de Papel</h3>
+                    <label><input type="checkbox"> Papel não traciona</label>
+                    <label><input type="checkbox"> Papel emperra com frequência</label>
+                    <label><input type="checkbox"> Papel saindo torto</label>
+                    <label><input type="checkbox"> Duplicidade de Etiqueta</label>
+                    <label><input type="checkbox"> Etiqueta enrolada no Platen</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Cabeça de Impressão</h3>
+                    <label><input type="checkbox"> Impressão falhando (linhas apagadas)</label>
+                    <label><input type="checkbox"> Cabeçote sujo ou danificado</label>
+                    <label><input type="checkbox"> Superaquecimento do cabeçote</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Sensores ou Tampas</h3>
+                    <label><input type="checkbox"> Sensor de papel não detecta</label>
+                    <label><input type="checkbox"> Sensor de tampa aberta com falha</label>
+                    <label><input type="checkbox"> Sensor de mídia com fita grudada</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Placa Eletrônica / Conexões</h3>
+                    <label><input type="checkbox"> Não liga</label>
+                    <label><input type="checkbox"> Reinicia sozinha</label>
+                    <label><input type="checkbox"> Conectores danificados</label>
+                    <label><input type="checkbox"> Erro da fonte de alimentação</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Conexão com Sistema</h3>
+                    <label><input type="checkbox"> Porta USB/Serial danificada</label>
+                    <label><input type="checkbox"> Impressora não reconhecida pelo sistema</label>
+                    <label><input type="checkbox"> Drivers desatualizados ou ausentes</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Qualidade de Impressão</h3>
+                    <label><input type="checkbox"> Impressão clara/distorcida</label>
+                    <label><input type="checkbox"> Impressão escura em excesso</label>
+                    <label><input type="checkbox"> Falhas intermitentes</label>
+                </div>
+
+                <div class="card-checklist">
+                    <h3>Ruído ou Aquecimento</h3>
+                    <label><input type="checkbox"> Ruídos incomuns durante a operação</label>
+                    <label><input type="checkbox"> Aquecimento excessivo</label>
+                    <label><input type="checkbox"> Aquecimento no Cabeçote de Impressão</label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Descrição dos Problemas / Observações Adicionais</h3>
+                <textarea placeholder="Relate detalhadamente o serviço executado..."></textarea>
+            </div>
+
+            <div class="form-section">
+                <h3>Espaço para Inserção de Fotos</h3>
+                
+                <div class="photo-container-wrapper">
+                    <div class="photo-column">
+                        <h4>EVINDÊNCIAS: ANTES</h4>
+                        <div class="photo-grid-5">
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 01</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 02</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 03</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 04</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 05</p><input type="file" hidden accept="image/*"></div>
+                        </div>
+                    </div>
+
+                    <div class="photo-column">
+                        <h4>EVIDÊNCIAS: DEPOIS</h4>
+                        <div class="photo-grid-5">
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 01</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 02</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 03</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 04</p><input type="file" hidden accept="image/*"></div>
+                            <div class="photo-box"><button type="button" class="remove-photo" onclick="removeImage(this)">×</button><span class="icon">📷</span><p>Foto 05</p><input type="file" hidden accept="image/*"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-finalizar">Emitir Relatório de Vistoria</button>
+        </form>
+    </div>
+    <script src="manutenção_preventiva.js"></script>
+</body>
+</html>
