@@ -1,183 +1,184 @@
 let currentUser = null;
-let currentMode = 'pessoal';
 let authMode = 'login';
-let pomoInterval = null;
 
-// CONTROLE DE TELAS (LOGIN vs CADASTRO)
+// --- 1. INICIALIZAÇÃO ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Garante que o sistema comece na tela de login
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('main-content').style.display = 'none';
+});
+
+// --- 2. CONTROLE DO MENU LATERAL (SIDEBAR) ---
+function toggleSidebar() {
+    const sidebar = document.querySelector('.glass-sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    
+    // Liga/Desliga as classes
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+}
+
+// Opcional: Fechar o menu automaticamente ao clicar em uma opção
+document.querySelectorAll('.side-item').forEach(item => {
+    item.addEventListener('click', () => {
+        // Se não for o botão de sair, ele fecha o menu após o clique
+        if (!item.classList.contains('logout')) {
+            toggleSidebar();
+        }
+    });
+});
+
+// Fecha o menu se clicar em qualquer item lá dentro
+document.querySelectorAll('.side-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if (!item.classList.contains('logout')) {
+            toggleSidebar();
+        }
+    });
+});
+
+// --- 3. NAVEGAÇÃO ENTRE PÁGINAS ---
+function navigate(pageId) {
+    // 1. Seleciona todas as seções
+    const sections = document.querySelectorAll('.main-section');
+    sections.forEach(s => s.classList.remove('active'));
+
+    // 2. Ativa a página alvo
+    const target = document.getElementById(pageId);
+    if (target) {
+        target.classList.add('active');
+    }
+
+    // 3. Atualiza o estado visual dos botões no menu
+    const menuItems = document.querySelectorAll('.side-item');
+    menuItems.forEach(item => {
+        item.classList.remove('active');
+        // Se o clique veio do menu, marca como ativo
+        if (item.getAttribute('onclick')?.includes(pageId)) {
+            item.classList.add('active');
+        }
+    });
+
+    // 4. Fecha o menu após navegar
+    const sidebar = document.getElementById('side-menu');
+    if (sidebar.classList.contains('open')) {
+        toggleSidebar();
+    }
+
+    // 5. Se for inventário, carrega os dados
+    if (pageId === 'page-inventario') {
+        loadZebraInventory('ZT411');
+    }
+
+    window.scrollTo(0, 0);
+}
+
+// --- 4. SISTEMA DE AUTENTICAÇÃO ---
 function toggleAuth(mode) {
     authMode = mode;
-    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
-    document.getElementById('tab-register').classList.toggle('active', mode === 'register');
-    
-    // Mostra/Esconde campos de Nome e Email
-    const registerFields = document.getElementById('register-only-fields');
-    registerFields.style.display = mode === 'register' ? 'block' : 'none';
-    
-    // Altera o texto do botão principal
-    document.getElementById('auth-main-btn').innerText = mode === 'login' ? 'Acessar AXIS' : 'Finalizar Cadastro';
-}
+    const registerFields = document.getElementById('register-fields');
+    const mainBtn = document.getElementById('auth-main-btn');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
 
-// OLHO DA SENHA (JÁ FIXADO)
-function togglePassword() {
-    const p = document.getElementById('password');
-    const eye = document.querySelector('.eye-icon');
-    if (p.type === 'password') {
-        p.type = 'text';
-        eye.innerText = '🙈';
+    if (mode === 'login') {
+        registerFields.style.display = 'none';
+        mainBtn.innerText = 'Acessar AXIS';
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
     } else {
-        p.type = 'password';
-        eye.innerText = '👁️';
+        registerFields.style.display = 'block';
+        mainBtn.innerText = 'Finalizar Cadastro';
+        tabLogin.classList.remove('active');
+        tabRegister.classList.add('active');
     }
 }
 
-// LOGICA DE AUTENTICAÇÃO E CADASTRO
 function handleAuth() {
-    const user = document.getElementById('username').value.trim().toUpperCase();
-    const pass = document.getElementById('password').value;
+    const userField = document.getElementById('username');
+    const passField = document.getElementById('password');
+    const userInput = userField.value.trim().toUpperCase();
+    const pass = passField.value;
 
     if (authMode === 'register') {
-        const fullName = document.getElementById('reg-fullname').value.trim();
-        const email = document.getElementById('reg-email').value.trim();
-
-        if (!fullName || !email || !user || !pass) {
-            alert("Por favor, preencha todos os 4 campos para o cadastro AXIS.");
-            return;
-        }
-
-        const userData = {
-            name: fullName,
-            email: email,
-            pass: pass,
-            tasks: [],
-            fin: [],
-            habits: [
-                {n: "Beber Água", d: false},
-                {n: "Check Sistema", d: false},
-                {n: "Leitura", d: false}
-            ],
-            diary: { pessoal: "", profissional: "" }
-        };
-
-        localStorage.setItem('db_' + user, JSON.stringify(userData));
-        alert(`Conta AXIS criada com sucesso! Bem-vindo, ${fullName}.`);
+        const nameField = document.getElementById('reg-fullname');
+        const name = nameField.value.trim();
+        
+        if (!name || !userInput || !pass) return alert("Preencha todos os campos!");
+        
+        const userData = { name: name.toUpperCase(), pass: pass };
+        localStorage.setItem('db_' + userInput, JSON.stringify(userData));
+        alert("Conta criada com sucesso!");
         toggleAuth('login');
-        
     } else {
-        // Lógica de Login
-        const storedData = JSON.parse(localStorage.getItem('db_' + user));
-        
-        if (storedData && storedData.pass === pass) {
-            currentUser = user;
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            updateUI();
+        const dbRaw = localStorage.getItem('db_' + userInput);
+        if (dbRaw) {
+            const db = JSON.parse(dbRaw);
+            if (db.pass === pass) {
+                // SUCESSO NO LOGIN
+                currentUser = db.name || userInput;
+                
+                // Atualiza saudação
+                document.getElementById('user-display-name').innerText = currentUser;
+
+                // Transição de telas
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                
+                // Inicia na Home
+                navigate('page-home');
+            } else {
+                alert("Senha incorreta.");
+            }
         } else {
-            alert("Credenciais INVÁLIDAS.");
+            alert("Usuário não encontrado.");
         }
     }
 }
 
-// ATUALIZAÇÃO DA INTERFACE (USA O NOME SALVO)
-function updateUI() {
-    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    // Aqui usamos o NOME REAL em vez do usuário
-    document.getElementById('welcome-msg').innerText = db.name || currentUser;
-    
-    renderHabits(db);
-    renderTasks(db);
-    renderFinance(db);
-    document.getElementById('diary-input').value = db.diary[currentMode] || "";
+// --- 5. FUNCIONALIDADES TÉCNICAS ---
+function loadZebraInventory(modelPrefix) {
+    const tableBody = document.getElementById('zt411-data');
+    if (!tableBody) return;
+
+    let html = '';
+    for (let i = 1; i <= 50; i++) {
+        const ip = `10.15.20.${i}`;
+        const tag = `${modelPrefix}-IND-${i.toString().padStart(3, '0')}`;
+        html += `
+            <tr>
+                <td><strong>${tag}</strong></td>
+                <td>Zebra ${modelPrefix}</td>
+                <td>${ip}</td>
+                <td><span style="color: #34c759; font-weight: 600;">● Online</span></td>
+                <td>Produção Sul</td>
+            </tr>`;
+    }
+    tableBody.innerHTML = html;
 }
 
-// --- FUNÇÕES DO DASHBOARD (HÁBITOS, TAREFAS, FINANÇAS) ---
-
-function renderHabits(db) {
-    const list = document.getElementById('habit-list');
-    list.innerHTML = '';
-    let done = 0;
-    db.habits.forEach((h, i) => {
-        if (h.d) done++;
-        list.innerHTML += `<div class="habit-item ${h.d ? 'done' : ''}" onclick="toggleHabit(${i})">${h.n}</div>`;
-    });
-    document.getElementById('habit-progress').style.width = (done / db.habits.length * 100) + '%';
-}
-
-function toggleHabit(index) {
-    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    db.habits[index].d = !db.habits[index].d;
-    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
-    updateUI();
-}
-
-function addTodo() {
-    const val = document.getElementById('todo-input').value;
-    if (!val) return;
-    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    db.tasks.push({ text: val, mode: currentMode });
-    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
-    document.getElementById('todo-input').value = '';
-    updateUI();
-}
-
-function renderTasks(db) {
-    const list = document.getElementById('todo-list');
-    list.innerHTML = '';
-    db.tasks.filter(t => t.mode === currentMode).forEach(t => {
-        list.innerHTML += `<li>${t.text}</li>`;
-    });
-}
-
-function addFinance() {
-    const desc = document.getElementById('fin-desc').value;
-    const val = parseFloat(document.getElementById('fin-val').value);
-    if (!desc || isNaN(val)) return;
-    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    db.fin.push({ desc, val, mode: currentMode });
-    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
-    document.getElementById('fin-desc').value = '';
-    document.getElementById('fin-val').value = '';
-    updateUI();
-}
-
-function renderFinance(db) {
-    const list = document.getElementById('fin-list');
-    list.innerHTML = '';
-    let total = 0;
-    db.fin.filter(f => f.mode === currentMode).forEach(f => {
-        total += f.val;
-        list.innerHTML += `<li class="finance-item"><span>${f.desc}</span> <span>R$ ${f.val.toFixed(2)}</span></li>`;
-    });
-    document.getElementById('fin-total').innerText = `R$ ${total.toFixed(2)}`;
-}
-
-function saveDiary() {
-    const db = JSON.parse(localStorage.getItem('db_' + currentUser));
-    db.diary[currentMode] = document.getElementById('diary-input').value;
-    localStorage.setItem('db_' + currentUser, JSON.stringify(db));
-    alert("Notas AXIS salvas!");
-}
-
-function togglePomodoro() {
-    if (pomoInterval) { 
-        clearInterval(pomoInterval); 
-        pomoInterval = null; 
-        document.getElementById('btn-pomo').innerText = '▶';
+function togglePassword() {
+    const input = document.getElementById('password');
+    const icon = document.getElementById('eye-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerText = '🙈';
     } else {
-        let t = 1500;
-        document.getElementById('btn-pomo').innerText = '⏸';
-        pomoInterval = setInterval(() => {
-            t--;
-            let m = Math.floor(t/60), s = t%60;
-            document.getElementById('pomo-timer').innerText = `${m}:${s<10?'0':''}${s}`;
-            if (t <= 0) { clearInterval(pomoInterval); alert("Tempo Esgotado!"); }
-        }, 1000);
+        input.type = 'password';
+        icon.innerText = '👁️';
     }
 }
 
-function switchMode() {
-    currentMode = currentMode === 'pessoal' ? 'profissional' : 'pessoal';
-    document.getElementById('mode-toggle').innerText = `Perfil: ${currentMode}`;
-    updateUI();
+function logout() {
+    if(confirm("Deseja realmente sair do sistema AXIS?")) {
+        // Limpa campos e recarrega a aplicação (volta ao estado inicial)
+        location.reload();
+    }
 }
 
-function logout() { location.reload(); }
+// Placeholder para busca global
+function handleGlobalSearch() {
+    const query = document.getElementById('global-search').value.toUpperCase();
+    console.log("Buscando por:", query);
+    // Aqui você pode implementar a lógica de filtro da tabela
+}
