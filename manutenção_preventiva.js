@@ -1,118 +1,161 @@
-// 1. GESTÃO DE FOTOS (COMPRESSÃO PARA SUPORTAR FOTOS GRANDES)
-function removeImage(button) {
-    const box = button.parentElement;
-    const input = box.querySelector('input');
-    box.style.backgroundImage = 'none';
-    box.querySelector('.icon').style.display = 'block';
-    box.querySelector('p').style.display = 'block';
-    button.style.display = 'none';
-    input.value = ''; 
-}
-
-document.querySelectorAll('.photo-box').forEach(box => {
-    const input = box.querySelector('input');
-    const removeBtn = box.querySelector('.remove-photo');
-    box.addEventListener('click', (e) => { if (e.target !== removeBtn) input.click(); });
-    
-    input.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const scale = Math.min(800 / img.width, 1);
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    box.style.backgroundImage = `url(${canvas.toDataURL('image/jpeg', 0.8)})`;
-                    box.style.backgroundSize = 'cover';
-                    box.querySelector('.icon').style.display = 'none';
-                    box.querySelector('p').style.display = 'none';
-                    removeBtn.style.display = 'flex';
-                };
-            };
-            reader.readAsDataURL(this.files[0]);
-        }
-    });
-});
-
-// 2. GERADOR DE PDF FINALIZADO (2 PÁGINAS COM CHECKLIST UNIFICADO)
+/* ==========================================================
+   1. MOTOR DE GERAÇÃO DE PDF + AVISO MODERNO (UNIFICADO)
+   ========================================================== */
 document.getElementById('preventiva-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    const originalElement = document.querySelector('.glass-container');
-    const worker = originalElement.cloneNode(true);
-
-    // --- AJUSTES DE BORDAS E ESPAÇAMENTO ---
-    worker.style.background = "#ffffff";
-    worker.style.width = "790px"; // Largura máxima A4
-    worker.style.padding = "10px"; // Bordas menores
-    worker.querySelectorAll('button').forEach(b => b.remove());
-
-    // Ajuste dos campos de Identificação para ocupar menos espaço vertical
-    worker.querySelectorAll('.row, .row-3').forEach(row => {
-        row.style.display = "flex";
-        row.style.marginBottom = "5px";
-        row.querySelectorAll('.input-group').forEach(group => {
-            group.style.flex = "1";
-            group.style.margin = "0 5px";
-            group.style.fontSize = "11px";
-        });
-    });
-
-    // --- UNIFICAÇÃO DO CHECKLIST NA PÁGINA 1 ---
-    // Removemos qualquer quebra de página automática do checklist
-    const cards = worker.querySelectorAll('.card-checklist');
-    cards.forEach(card => {
-        card.style.pageBreakInside = "avoid";
-        card.style.marginBottom = "8px";
-    });
-
-    // --- QUEBRA DE PÁGINA SOMENTE PARA DESCRIÇÃO E FOTOS ---
-    const descSec = worker.querySelector('.form-section:nth-last-of-type(2)');
-    if(descSec) {
-        descSec.style.pageBreakBefore = "always";
-        descSec.style.marginTop = "10px";
+    // Validação básica
+    if (!this.checkValidity()) {
+        showAlert("Atenção", "Por favor, preencha todos os campos obrigatórios.");
+        return;
     }
 
-    // --- AJUSTE DAS FOTOS DE EVIDÊNCIA (FOTO 05) ---
-    const grids = worker.querySelectorAll('.photo-grid, .photo-grid-5');
-    grids.forEach(grid => {
-        grid.style.display = "grid";
-        grid.style.gridTemplateColumns = "repeat(5, 1fr)"; // Garante 5 colunas iguais
-        grid.style.gap = "5px";
-        grid.style.marginTop = "10px";
-        
-        grid.querySelectorAll('.photo-box').forEach(box => {
-            box.style.height = "110px"; // Altura fixa para caber tudo
-            box.style.width = "100%";
-            box.style.border = "1px solid #ccc";
-        });
-    });
+    const serial = document.getElementById('serial_id').value || 'SEM_SERIAL';
+    const dataAtual = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
+    const element = document.getElementById('pdf-content');
+    const btn = document.getElementById('btn-gerar');
 
-    // --- ASSINATURA FINAL ---
-    const assinatura = document.createElement('div');
-    assinatura.style.cssText = "margin-top: 20px; text-align: center; border-top: 1px solid #000; padding-top: 15px; page-break-inside: avoid;";
-    assinatura.innerHTML = `
-        <div style="width: 250px; border-top: 2px solid #000; margin: 0 auto 5px auto;"></div>
-        <p style="margin: 0; font-weight: bold; font-size: 15px; text-transform: uppercase;">FILIPE DA SILVA</p>
-        <p style="margin: 0; font-size: 13px;">Operação Logística - Mercado Livre</p>
-        <p style="font-size: 9px; color: #777; margin-top: 10px;">Relatório de Vistoria Técnica - ${new Date().toLocaleString('pt-BR')}</p>
-    `;
-    worker.appendChild(assinatura);
+    // Feedback visual e desabilita o botão
+    btn.disabled = true;
+    btn.textContent = "PROCESSANDO RELATÓRIO...";
+    btn.style.opacity = '0.5';
 
+    // Configurações otimizadas para PDF
     const opt = {
-        margin: [5, 5, 5, 5], // Margens mínimas do PDF
-        filename: `Vistoria_ML_Final.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        margin: [10, 0, 10, 0],
+        filename: `AXIS_PV_${serial}_${dataAtual}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            windowWidth: 2383, 
+            scrollY: 0,
+            logging: false
+        },
+        // MODO DE QUEBRA ESPECÍFICO
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(worker).save().then(() => {
-        alert('PDF 100% Finalizado e pronto para uso!');
+    // GERAÇÃO DO PDF + NUMERAÇÃO DE PÁGINA
+    html2pdf().set(opt).from(element).toPdf().get('pdf').then(function (pdf) {
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(10);
+            pdf.setTextColor(150);
+            pdf.text(`Página ${i} de ${totalPages}`, pdf.internal.pageSize.width / 2 - 20, pdf.internal.pageSize.height - 10);
+        }
+    }).save().then(() => {
+        // Reseta o botão após salvar
+        btn.disabled = false;
+        btn.textContent = "FINALIZAR E GERAR RELATÓRIO PDF";
+        btn.style.opacity = '1';
+        
+        // ========== INTEGRAÇÃO COM WHATSAPP ALERTS ==========
+        // (Adicionado aqui para funcionar APÓS o PDF ser salvo)
+        try {
+            if (typeof window.whatsAppAlerts !== 'undefined') {
+                const dadosPreventiva = {
+                    tecnico: document.getElementById('tecnico_id')?.value || 'FILIPE DA SILVA',
+                    modelo: document.getElementById('modelo_id')?.value || 'ZT411',
+                    serial: document.getElementById('serial_id')?.value || 'N/D',
+                    selb: document.getElementById('selb_id')?.value || 'N/D',
+                    status: 'Preventiva concluída - PDF gerado',
+                    data: document.getElementById('data_id')?.value || new Date().toLocaleDateString('pt-BR')
+                };
+                
+                // Enviar alerta após 1 segundo (tempo para processar)
+                setTimeout(() => {
+                    window.whatsAppAlerts.alertarPreventivaConcluida(dadosPreventiva);
+                }, 1000);
+                
+                console.log('✅ Alerta WhatsApp agendado para envio');
+            } else {
+                console.warn('⚠️ WhatsApp Alerts não está disponível');
+            }
+        } catch (error) {
+            console.error('❌ Erro na integração WhatsApp:', error);
+        }
+        // ========== FIM DA INTEGRAÇÃO ==========
+
+    }).catch(err => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        console.error("Erro crítico:", err);
+    });
+
+    // DISPARA O AVISO MODERNO (Substitui o alert preto do navegador)
+    showAlert("Relatório Concluído", "O checklist da AXIS foi gerado e o download iniciado!");
+});
+
+/* ==========================================================
+   2. LÓGICA DE UPLOAD DE FOTOS (OTIMIZADA)
+   ========================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const placeholders = document.querySelectorAll('.photo-placeholder');
+    
+    placeholders.forEach(card => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        
+        card.addEventListener('click', () => input.click());
+        
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            
+            if (file && file.size > 5 * 1024 * 1024) {
+                showAlert("Arquivo muito grande", "Escolha uma foto de até 5MB.");
+                return;
+            }
+
+            if (file) {
+                const reader = new FileReader();
+                card.textContent = '...'; 
+
+                reader.onload = (event) => {
+                    const imgUrl = event.target.result;
+                    card.style.backgroundImage = `url('${imgUrl}')`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'center';
+                    card.textContent = ''; 
+                    card.style.border = '2px solid #28a745';
+                    card.classList.add('has-photo');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    // Data automática
+    const dataInput = document.getElementById('data_id');
+    if (dataInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dataInput.value = today;
+    }
+});
+
+/* ==========================================================
+   3. AUTO-SAVE LOCAL E CONTROLE DO AVISO GLASS
+   ========================================================== */
+const inputsAutoSave = document.querySelectorAll('input[type="text"], input[type="date"], textarea');
+inputsAutoSave.forEach(input => {
+    if (localStorage.getItem(input.id)) {
+        input.value = localStorage.getItem(input.id);
+    }
+    input.addEventListener('input', () => {
+        localStorage.setItem(input.id, input.value);
     });
 });
+
+// Funções do Modal de Vidro (Apple Style)
+function showAlert(titulo, mensagem) {
+    document.getElementById('alert-title').innerText = titulo;
+    document.getElementById('alert-message').innerText = mensagem;
+    document.getElementById('custom-alert').style.display = 'flex';
+}
+
+function closeAlert() {
+    document.getElementById('custom-alert').style.display = 'none';
+}
